@@ -12,10 +12,10 @@ Lbs::App.controllers "/distance" do
         status_code = 200
         response.merge!({:status=>"SUCCESS"}).merge!(distance_hash)
       else
-        response.merge!({:reason=>"Unable to calculate distance between input lat, lng"})
+        response.merge!({:reason=>"Unable to calculate distance between input sourcea and dest"})
       end
     else
-      response.merge!({:reason=>"Empty or invalid input lat, lng"})
+      response.merge!({:reason=>"Empty or invalid input source or dest lat, lng"})
     end
     logger.info "distance slat=#{params[:slat]} slng=#{params[:slng]} dlat=#{params[:dlat]} dlng=#{params[:dlng]}. status=#{status_code} response=#{response}"
     status status_code
