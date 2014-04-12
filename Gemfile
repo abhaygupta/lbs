@@ -30,6 +30,8 @@ gem 'httparty', '0.9.0'
 
 gem 'json'
 
+gem 'geo-distance', '~> 0.2.0'
+
 # Or Padrino Edge
 # gem 'padrino', :github => 'padrino/padrino-framework'
 

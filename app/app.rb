@@ -14,8 +14,8 @@ module Lbs
     #api keys
     set :google_api_key, "DUMMY_KEY"
     set :google_url, "https://maps.googleapis.com/maps/api"
-
-
+    set :haversine_distance_normalizer, 1.3 #linear haversine distance * 1.3 ~= actual distance
+    set :approx_avg_speed, 3 #assuming avg speed 12 kmph or 3 meter per sec
     ##
     # Caching support.
     #

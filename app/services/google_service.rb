@@ -9,15 +9,17 @@ class GoogleService
 
   class << self
     def distance_metrics(start, dest)
+      distance_metric_hash = {}
       begin
         logger.info "distance between start=#{start.to_s} end=#{dest.to_s}"
         response = GoogleService.new(GoogleService.get("#{Lbs::App.settings.google_url}/distancematrix/json?origins=#{start.lat},#{start.lng}&destinations=#{dest.lat},#{dest.lng}&sensor=false&language=en&key=#{Lbs::App.settings.google_api_key}"))
-        p response
-        response.success? ? response.get_distance_metrics : nil
+        distance_metric_hash = response.success? ? response.get_distance_metrics : nil 
+        #if google doesn't return distance metrics use haversinse formula
+        distance_metric_hash = response.get_distance_using_haversine(start, dest) if distance_metric_hash.blank?
       rescue Exception => e
         logger.info "Google Service get distance metrics failed for start=#{start.to_s} dest=#{dest.to_s}. Exception : #{e.message}"
-        nil
      end
+     distance_metric_hash
     end
 
     def address(location)
@@ -63,15 +65,15 @@ class GoogleService
   end
   
   def get_distance_metrics
-    distance_metrics = {:distance=> nil, :duration=> nil}
+    distance_metrics = {}
     begin
       if (rows = response_object.parsed_response.try(:[], "rows"))
         if rows.present? && rows.size > 0 && (elements = rows[0].try(:[], "elements")).present? && elements.size > 0 
           if (distance_hash = elements[0].try(:[], "distance")).present? && distance_hash["value"].present?
-            distance_metrics[:distance] = distance_hash["value"]
+            distance_metrics.merge!({:distance =>  distance_hash["value"], :distance_unit=>'METER'})
           end
           if (duration_hash = elements[0].try(:[], "duration")).present? && duration_hash["value"].present?
-            distance_metrics[:duration] = duration_hash["value"]
+            distance_metrics.merge!({:duration => duration_hash["value"], :duration_unit=>'SECONDS'})
           end          
         end
       end
@@ -79,6 +81,14 @@ class GoogleService
       logger.error "Error getting the address, Exception=#{e.message}"
     end
     logger.info "distance metrics found #{distance_metrics}"
+    distance_metrics
+  end
+  
+  def get_distance_using_haversine(start, dest)
+    logger.info "Using haversine to calculate distance metrics from start=#{start.to_s} dest=#{dest.to_s}"
+    distance_metrics = {:distance=> nil, :distance_unit=>'METER', :duration=> nil, :duration_unit=>'SECONDS'}
+    distance_metrics[:distance] = GeoDistance::Haversine.geo_distance(start.lat, start.lng, dest.lat, dest.lng).to_meters * Lbs::App.settings.haversine_distance_normalizer
+    distance_metrics[:duration] = distance_metrics[:distance].to_f/Lbs::App.settings.approx_avg_speed
     distance_metrics
   end
   
